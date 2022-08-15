@@ -5,6 +5,7 @@ import math
 import random
 from mathutils import Vector
 import time
+import datetime
 import argparse
 import tempfile
 from pathlib import Path
@@ -56,7 +57,8 @@ def add_materials(work_dir):
     texImage.image = bpy.data.images.load(os.path.join(work_dir, 'model', "LowP_03_Texture_ColAO_grey5.jpg"))
     mat.node_tree.links.new(bsdf.inputs['Base Color'], texImage.outputs['Color'])
 
-    obj = bpy.data.objects['LowP_01']
+#    obj = bpy.data.objects['LowP_01']
+    obj = bpy.data.objects['Lea1']
     obj.modifiers['Armature'].use_deform_preserve_volume=True
     # Assign it to object
     if obj.data.materials:
@@ -106,17 +108,6 @@ def load_audio(filepath):
         channel=1,
         frame_start=0
     )
-    
-def create_fbx(output_dir):
-    fbx_output = "\\output"
-    bpy.ops.object.select_all(action='DESELECT')
-    obj = bpy.data.objects['Armature']
-    obj_mesh = bpy.data.objects['LowP_01']
-    obj.select_set(True)
-    obj_mesh.select_set(True)
-    output_dir = str(output_dir) + fbx_output
-    print(str(output_dir))
-    bpy.ops.export_scene.fbx(filepath=str(output_dir) + '\\output.fbx', use_selection=True)
 
 ########################
 # Retarget Method No.1 #
@@ -125,12 +116,12 @@ def retarget_keemap(testing):
     
     mapping_file_folder = "S:\\Work\\WIP\\WARA_Media_and_Language\\Unreal_setup\\configs\\config_1.json"
     
-    bpy.data.scenes["Scene"].keemap_settings.source_rig_name = 'session30_take5_hasFingers_shallow26_scale_local_30fps_3.6k'
+    bpy.data.scenes["Scene"].keemap_settings.source_rig_name = 'output'
     bpy.data.scenes["Scene"].keemap_settings.destination_rig_name = 'Armature'
     bpy.data.scenes["Scene"].keemap_settings.bone_mapping_file = mapping_file_folder
     
     bpy.data.scenes["Scene"].keemap_settings.start_frame_to_apply = 1
-    bpy.data.scenes["Scene"].keemap_settings.number_of_frames_to_apply = 1200
+    bpy.data.scenes["Scene"].keemap_settings.number_of_frames_to_apply = 36
     bpy.data.scenes["Scene"].keemap_settings.keyframe_every_n_frames = 1
     
     bpy.data.scenes["Scene"].keemap_settings.keyframe_test = True
@@ -146,42 +137,40 @@ def retarget_keemap(testing):
 #    end_frame = bpy.data.scenes["Scene"].keemap_settings.number_of_frames_to_apply
 #    source = bpy.data.scenes["Scene"].keemap_settings.source_rig_name
 #    destination = bpy.data.scenes["Scene"].keemap_settings.destination_rig_name
-    
-    mapping_file_folder = "D:\\Utrecht University\\Thesis\\blender\\retarget_pred_1.json"
-    
-    bpy.data.scenes["Scene"].keemap_settings.source_rig_name = 'pred'
-    bpy.data.scenes["Scene"].keemap_settings.destination_rig_name = 'mixamorig:root.001'
-    bpy.data.scenes["Scene"].keemap_settings.bone_mapping_file = mapping_file_folder
-    
-    bpy.data.scenes["Scene"].keemap_settings.keyframe_test = True
-    
-    bpy.ops.wm.keemap_read_file()
-    bpy.ops.wm.test_all_bones()
-    if testing == False:
-        bpy.ops.wm.perform_animation_transfer()
 
 ########################
 # Retarget Method No.2 #
 ########################
-def retarget_retarget(fp, bot_fp, load_bots, version):
+def retarget_retarget(filepath):
     bpy.ops.object.select_all(action='DESELECT')
-    if version == 0:
-        load_bot(bot_fp, load_bots, version)
-        obj_gt = bpy.data.objects['gt']
-        bpy.context.object.animation_retarget_state['source'] = obj_gt
-        obj_bot = bpy.data.objects['mixamorig:root']
-        bpy.context.object.animation_retarget_state['target'] = obj_bot
-        bpy.ops.retarget.load(filepath=fp + "retarget_gt_full.rtconf")
-#        bpy.context.object.animation_retarget_state.disable_drivers = True
-    elif version == 1:
-        load_bot(bot_fp, load_bots, version)
-        obj_pred = bpy.data.objects['pred']
-        bpy.context.object.animation_retarget_state['source'] = obj_pred
-        obj_bot = bpy.data.objects['mixamorig:root.001']
-        bpy.context.object.animation_retarget_state['target'] = obj_bot
-        bpy.ops.retarget.load(filepath=fp + "retarget_pred_full.rtconf")
-#        bpy.context.object.animation_retarget_state.disable_drivers = True
+    obj_avatar = bpy.data.objects['Armature']
+    bpy.context.view_layer.objects.active = obj_avatar
+    bpy.context.object.animation_retarget_state.target = obj_avatar
+    obj_gt = bpy.data.objects['output']
+#    bpy.context.view_layer.objects.active = obj_gt
+    bpy.context.object.animation_retarget_state.selected_source = obj_gt
+    bpy.ops.retarget.load(filepath=str(filepath) + "\\configs\\retarget_config_1.rtconf")
+#    bpy.context.object.animation_retarget_state.disable_drivers = True
 
+########################
+#     GENERATE FBX     #
+########################
+def create_fbx(output_dir):
+    fbx_output = "\\output"
+    bpy.ops.object.select_all(action='DESELECT')
+    obj = bpy.data.objects['Armature']
+#    obj_mesh = bpy.data.objects['LowP_01']
+    obj_mesh = bpy.data.objects['Lea1']
+    obj.select_set(True)
+    obj_mesh.select_set(True)
+    output_dir = str(output_dir) + fbx_output
+    print(str(output_dir))
+    cur_time = datetime.datetime.now()
+    bpy.ops.export_scene.fbx(filepath=str(output_dir) + '\\output_{}-{}_{}-{}.fbx'.format(cur_time.day, cur_time.month, cur_time.hour, cur_time.minute), use_selection=True)
+
+########################
+#      CMD INPUT       #
+########################
 def parse_args():
     parser = argparse.ArgumentParser(description="Some description.", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('-i', '--input', help='Input file name of the BVH to render.', type=Path, required=True)
@@ -204,10 +193,13 @@ def main():
         ##### SET ARGUMENTS MANUALLY #####
         ##### IF RUNNING BLENDER GUI #####
         ##################################
-        ARG_BVH_PATHNAME = SCRIPT_DIR / 'session30_take5_hasFingers_shallow26_scale_local_30fps_3.6k.bvh'
+        ARG_BVH_PATHNAME = SCRIPT_DIR / 'output.bvh'
         ARG_START_FRAME = 0
         ARG_DURATION_IN_FRAMES = 3600
         ARG_OUTPUT_DIR = ARG_BVH_PATHNAME.parents[0]
+        print(ARG_OUTPUT_DIR)
+        ARG_TESTING = True
+        ARG_TESTING_TYPE = 'keemap'
     else:
         print('[INFO] Script is running from command line.')
         SCRIPT_DIR = Path(os.path.realpath(__file__)).parents[0]
@@ -217,9 +209,11 @@ def main():
         ARG_START_FRAME = args['start']
         ARG_DURATION_IN_FRAMES = args['duration']
         ARG_OUTPUT_DIR = args['output_dir'].resolve() if args['output_dir'] else ARG_BVH_PATHNAME.parents[0]
+        ARG_TESTING = True
+        ARG_TESTING_TYPE = 'keemap'
     
     # FBX file
-    FBX_MODEL = os.path.join(SCRIPT_DIR, 'model', "GenevaModel_v2_Tpose_Final.fbx")
+    FBX_MODEL = os.path.join(SCRIPT_DIR, 'model', "Lea_fixed.fbx")
     BVH_NAME = os.path.basename(ARG_BVH_PATHNAME).replace('.bvh','')
 
     start = time.time()
@@ -236,6 +230,10 @@ def main():
         
     total_frames = bpy.data.objects[BVH_NAME].animation_data.action.frame_range.y
     #render_video(str(ARG_OUTPUT_DIR), ARG_IMAGE, ARG_VIDEO, BVH_NAME, ARG_START_FRAME, min(ARG_DURATION_IN_FRAMES, total_frames), ARG_RESOLUTION_X, ARG_RESOLUTION_Y)
+    if ARG_TESTING_TYPE == 'keemap':
+        retarget_keemap(ARG_TESTING)
+    elif ARG_TESTING_TYPE == 'retarget':
+        retarget_retarget(ARG_OUTPUT_DIR)
     create_fbx(ARG_OUTPUT_DIR)
     
     end = time.time()
